@@ -1,18 +1,16 @@
 package socketio
 
 import (
-	"net/http"
+	"github.com/zhouhui8915/engine.io-go"
 	"net/url"
 	"reflect"
-	"github.com/zhouhui8915/engine.io-go"
+	"path"
+	"strings"
 )
-
-var defaultTransport = "websocket"
 
 type Options struct {
 	Transport string            //protocol name string,websocket polling...
 	Query     map[string]string //url的附加的参数
-
 }
 
 type Client struct {
@@ -20,32 +18,36 @@ type Client struct {
 
 	conn *engineio.ClientConn
 
-	events map[string]*caller
-	acks   map[int]*caller
+	events    map[string]*caller
+	acks      map[int]*caller
 	id        int
 	namespace string
 }
 
 func NewClient(uri string, opts *Options) (client *Client, err error) {
 
-	request := &http.Request{}
-	request.URL, err = url.Parse(uri)
+	url, err := url.Parse(uri)
 	if err != nil {
 		return
 	}
-	q := request.URL.Query()
+	url.Path = path.Join("/socket.io",url.Path)
+	url.Path = url.EscapedPath()
+	if strings.HasSuffix(url.Path,"socket.io"){
+		url.Path+="/"
+	}
+	q := url.Query()
 	for k, v := range opts.Query {
 		q.Set(k, v)
 	}
-	request.URL.RawQuery = q.Encode()
+	url.RawQuery = q.Encode()
 
-	socket, err := engineio.NewClientConn(opts.Transport, request)
+	socket, err := engineio.NewClientConn(opts.Transport, url)
 	if err != nil {
 		return
 	}
 
 	client = &Client{
-		opts:   opts,
+		opts: opts,
 		conn: socket,
 
 		events: make(map[string]*caller),
@@ -165,7 +167,7 @@ func (client *Client) onPacket(decoder *decoder, packet *packet) ([]interface{},
 		args = append(args, nil)
 	}
 
-	retV := c.Call(nil,args)
+	retV := c.Call(nil, args)
 	if len(retV) == 0 {
 		return nil, nil
 	}
@@ -194,7 +196,7 @@ func (client *Client) onAck(id int, decoder *decoder, packet *packet) error {
 	if err := decoder.DecodeData(packet); err != nil {
 		return err
 	}
-	c.Call(nil,args)
+	c.Call(nil, args)
 	return nil
 }
 
