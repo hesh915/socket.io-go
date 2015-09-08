@@ -3,7 +3,7 @@ package socketio
 import (
 	"net/http"
 
-	"github.com/googollee/go-engine.io"
+	"github.com/zhouhui8915/engine.io-go"
 )
 
 // Socket is the socket object of socket.io.

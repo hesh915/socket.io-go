@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"strconv"
 
-	"github.com/googollee/go-engine.io"
+	"github.com/zhouhui8915/engine.io-go"
 )
 
 const Protocol = 4
